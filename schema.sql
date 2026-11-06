@@ -1,0 +1,51 @@
+CREATE DATABASE IF NOT EXISTS finance_monitor
+  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE finance_monitor;
+
+CREATE TABLE IF NOT EXISTS users (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(190) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS statements (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  original_filename VARCHAR(255) NOT NULL,
+  file_type VARCHAR(10) NOT NULL,
+  uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  transaction_count INT DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS transactions (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  statement_id BIGINT NOT NULL,
+  txn_date DATE NOT NULL,
+  description VARCHAR(500) NOT NULL,
+  amount DECIMAL(14,2) NOT NULL,
+  txn_type ENUM('income','expense') NOT NULL,
+  category VARCHAR(60) NOT NULL DEFAULT 'Other',
+  is_anomaly BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_user_date (user_id, txn_date),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (statement_id) REFERENCES statements(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS monthly_analysis (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  month_key CHAR(7) NOT NULL,
+  income DECIMAL(14,2) NOT NULL DEFAULT 0,
+  expenses DECIMAL(14,2) NOT NULL DEFAULT 0,
+  savings DECIMAL(14,2) NOT NULL DEFAULT 0,
+  health_score INT NOT NULL DEFAULT 0,
+  predicted_expenses DECIMAL(14,2) NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_user_month (user_id, month_key),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

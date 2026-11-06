@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinHealth AI - Bank Statement Analyzer</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo">
+        <span class="logo-icon">📊</span>
+        <h2>FinHealth <span>AI</span></h2>
+      </div>
+      <nav class="nav-links">
+        <button type="button" class="nav-btn active" data-tab="tab-overview">Overview</button>
+        <button type="button" class="nav-btn" data-tab="tab-transactions">Transactions</button>
+        <button type="button" class="nav-btn" data-tab="tab-prediction">Expense Prediction</button>
+        <button type="button" class="nav-btn" data-tab="tab-budget">Smart Budget</button>
+        <button type="button" class="nav-btn" data-tab="tab-invest">Investment Guide</button>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="status-indicator">
+          <span class="dot live"></span> System: Active
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="top-bar">
+        <div>
+          <h1>Bank Statement Analysis Suite</h1>
+          <p>Financial Health Monitoring & Fraud Detection</p>
+        </div>
+        <div class="action-buttons">
+          <input type="file" id="fileUpload" accept=".csv" style="display: none;">
+          <button type="button" class="btn btn-secondary" id="btnUploadTrigger">Upload CSV</button>
+          <button type="button" class="btn btn-primary" id="btnLoadSample">Load Demo</button>
+          <button type="button" class="btn btn-outline" id="btnExportReport">Print Report</button>
+        </div>
+      </header>
+
+      <!-- KPI Grid -->
+      <section class="kpi-grid">
+        <div class="kpi-card">
+          <span class="kpi-title">Verified Inflow</span>
+          <h2 id="kpiIncome" class="text-green">₹0</h2>
+          <span class="kpi-sub" id="kpiTxCredit">0 credits</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-title">Verified Outflow</span>
+          <h2 id="kpiExpense" class="text-red">₹0</h2>
+          <span class="kpi-sub" id="kpiTxDebit">0 debits</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-title">Health Score</span>
+          <h2 id="kpiScore" class="text-blue">-- / 100</h2>
+          <span class="kpi-sub" id="kpiScoreLabel">Awaiting Data</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-title">Anomalies</span>
+          <h2 id="kpiFraud" class="text-amber">0 Detected</h2>
+          <span class="kpi-sub">Rule-Based Flags</span>
+        </div>
+      </section>
+
+      <!-- Tab: Overview -->
+      <section id="tab-overview" class="tab-pane active">
+        <div class="dashboard-grid">
+          <div class="card chart-card">
+            <h3>Cash Flow Breakdown</h3>
+            <canvas id="cashflowChart"></canvas>
+          </div>
+          <div class="card chart-card">
+            <h3>Expenditure by Category</h3>
+            <canvas id="categoryChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab: Transactions -->
+      <section id="tab-transactions" class="tab-pane">
+        <div class="card">
+          <div class="table-header">
+            <h3>Transactions Log</h3>
+            <div class="filter-group">
+              <input type="text" id="txSearch" placeholder="Search..." class="input-field">
+              <select id="txFilterCategory" class="input-field">
+                <option value="all">All</option>
+                <option value="Salary">Salary</option>
+                <option value="Rent">Rent</option>
+                <option value="Food & Groceries">Food & Groceries</option>
+                <option value="Utilities">Utilities</option>
+                <option value="High Risk">High Risk</option>
+              </select>
+              <button type="button" class="btn btn-secondary" id="btnFilterFraudOnly">Flagged Only</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Description</th>
+                  <th>Category</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="transactionTableBody">
+                <tr><td colspan="7" style="text-align:center;">No data.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab: Prediction -->
+      <section id="tab-prediction" class="tab-pane">
+        <div class="dashboard-grid">
+          <div class="card">
+            <h3>AI Expense Run-Rate Forecast</h3>
+            <div class="prediction-box">
+              <div class="prediction-item">
+                <span>Predicted Burn:</span>
+                <strong id="predOutflow" class="text-red">₹0</strong>
+              </div>
+              <div class="prediction-item">
+                <span>Expected Savings:</span>
+                <strong id="predSavings" class="text-green">₹0</strong>
+              </div>
+              <div class="prediction-item">
+                <span>Estimated Runway:</span>
+                <strong id="predRunway">0 Months</strong>
+              </div>
+            </div>
+          </div>
+          <div class="card chart-card">
+            <h3>Projected Burn Trend</h3>
+            <canvas id="predictionChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab: Budget -->
+      <section id="tab-budget" class="tab-pane">
+        <div class="card">
+          <h3>50 / 30 / 20 Budget Analyzer</h3>
+          <div class="budget-meters">
+            <div class="budget-item">
+              <div class="budget-labels">
+                <span>Needs (50% max)</span>
+                <span id="budgetNeedsVal">₹0 / ₹0</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill fill-needs" id="barNeeds"></div></div>
+            </div>
+            <div class="budget-item">
+              <div class="budget-labels">
+                <span>Wants (30% max)</span>
+                <span id="budgetWantsVal">₹0 / ₹0</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill fill-wants" id="barWants"></div></div>
+            </div>
+            <div class="budget-item">
+              <div class="budget-labels">
+                <span>Savings (20% min)</span>
+                <span id="budgetSavingsVal">₹0 / ₹0</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill fill-savings" id="barSavings"></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab: Investment -->
+      <section id="tab-invest" class="tab-pane">
+        <div class="card">
+          <h3>Automated Portfolio Allocation</h3>
+          <div class="invest-grid">
+            <div class="invest-card">
+              <h4>Liquid Fund (40%)</h4>
+              <p>For emergencies and 3-6 months living reserves.</p>
+              <div class="invest-allocation" id="investEmergency">₹0</div>
+            </div>
+            <div class="invest-card">
+              <h4>Equity SIP (40%)</h4>
+              <p>Index-linked instruments for beating inflation.</p>
+              <div class="invest-allocation" id="investEquity">₹0</div>
+            </div>
+            <div class="invest-card">
+              <h4>Debt & Bonds (20%)</h4>
+              <p>Fixed returns to preserve accumulated principal.</p>
+              <div class="invest-allocation" id="investDebt">₹0</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- AI Assistant Panel (Updated English) -->
+      <div class="card ai-chat-panel">
+        <h3>🤖 Financial Assistant</h3>
+        <div class="chat-logs" id="chatBox">
+          <div class="chat-bubble bot">
+            Hello! I am your AI Financial Assistant. Load your statement and ask me about your budget, fraud alerts, or financial health score.
+          </div>
+        </div>
+        <div class="chat-controls">
+          <input type="text" id="chatInput" placeholder="Ask: 'Show fraud', 'How is my score?', or 'Budget advice'..." class="input-field">
+          <button type="button" class="btn btn-primary" id="btnSendChat">Send</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

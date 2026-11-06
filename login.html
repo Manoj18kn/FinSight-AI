@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinLens AI | Institutional Autonomous Underwriting Terminal</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --bg: #040812;
+      --panel: rgba(11, 18, 36, 0.95);
+      --border: #1a2744;
+      --primary: #3b82f6;
+      --success: #10b981;
+      --danger: #ef4444;
+      --purple: #a855f7;
+      --text: #f8fafc;
+      --text-muted: #7e91b0;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.16) 0px, transparent 40%),
+        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.12) 0px, transparent 40%);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .terminal-wrap { max-width: 1400px; margin: 0 auto; padding: 22px; }
+
+    /* Top Command Header */
+    .top-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand-group { display: flex; align-items: center; gap: 12px; }
+    .brand-title { font-size: 24px; font-weight: 800; }
+    .brand-title span { color: var(--primary); }
+
+    .live-pulse {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--success);
+      text-transform: uppercase;
+    }
+    .pulse-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); }
+
+    .account-switcher {
+      display: flex;
+      background: #080e1c;
+      border: 1px solid var(--border);
+      padding: 4px;
+      border-radius: 9px;
+      gap: 6px;
+    }
+
+    .acc-btn {
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .acc-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .acc-btn.active {
+      background: var(--primary) !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
+    }
+
+    .btn-action {
+      padding: 8px 15px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: #fff;
+    }
+    .btn-action.primary { background: var(--primary); border-color: var(--primary); }
+    .btn-action.primary:hover { background: #2563eb; }
+
+    /* Cards */
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .kpi-title { font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; }
+    .kpi-val { font-size: 28px; font-weight: 800; margin: 4px 0 2px; }
+    .kpi-sub { font-size: 12px; }
+
+    /* Loan Simulator */
+    .sim-card {
+      background: rgba(13, 22, 41, 0.95);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      border-radius: 14px;
+      padding: 22px;
+      margin-bottom: 22px;
+    }
+
+    .engine-grid {
+      display: grid;
+      grid-template-columns: 1.35fr 0.95fr;
+      gap: 20px;
+      margin-top: 14px;
+    }
+
+    .slider-box { margin-bottom: 12px; }
+    .slider-header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; color: var(--text-muted); font-weight: 600; }
+    .slider-input { width: 100%; accent-color: var(--primary); cursor: pointer; }
+
+    .stress-toggle {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .stress-btn {
+      flex: 1;
+      padding: 7px 10px;
+      background: #080e1c;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .stress-btn.active {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .verdict-badge {
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+      border: 1px solid;
+    }
+    .verdict-badge.approved { background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.4); color: var(--success); }
+    .verdict-badge.rejected { background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.4); color: var(--danger); }
+
+    /* Forensic Radar Alerts */
+    .radar-banner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .radar-alert {
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .radar-red { background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.35); }
+    .radar-blue { background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.35); }
+
+    /* Charts Row */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 1.65fr;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+    .chart-container { height: 260px; position: relative; }
+
+    /* Transactions Table */
+    .table-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .chips-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip {
+      padding: 6px 12px;
+      background: #080f1e;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+    .search-input {
+      background: #080f1e;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 14px;
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+      width: 250px;
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+    th { background: #070d1a; padding: 12px 14px; color: var(--text-muted); font-size: 11px; text-transform: uppercase; font-weight: 700; border-bottom: 1px solid var(--border); }
+    td { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+    tr:hover { background: rgba(26, 39, 68, 0.45); }
+
+    .badge { padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .badge-cr { background: #064e3b; color: #6ee7b7; }
+    .badge-db { background: #7f1d1d; color: #fca5a5; }
+    .badge-flag { background: #7c2d12; color: #fdba74; }
+
+    .text-green { color: var(--success); }
+    .text-red { color: var(--danger); }
+    .text-blue { color: var(--primary); }
+    .text-purple { color: var(--purple); }
+
+    @media (max-width: 992px) {
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+      .engine-grid, .radar-banner, .charts-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="terminal-wrap">
+    <!-- Top Header -->
+    <header class="top-header">
+      <div class="brand-group">
+        <span style="font-size: 28px;">🏛️</span>
+        <div class="brand-title">FinLens<span>Autonomous</span></div>
+        <div class="live-pulse">
+          <div class="pulse-dot"></div>
+          Underwriting Terminal
+        </div>
+      </div>
+
+      <!-- Account Switcher Buttons with Guaranteed Clicks -->
+      <div class="account-switcher">
+        <button class="acc-btn active" id="btn-all" onclick="handleAccountSwitch('ALL')">Consolidated Accounts</button>
+        <button class="acc-btn" id="btn-hdfc" onclick="handleAccountSwitch('HDFC')">HDFC Salary (**4921)</button>
+        <button class="acc-btn" id="btn-icici" onclick="handleAccountSwitch('ICICI')">ICICI Savings (**8812)</button>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-action primary" onclick="window.print()">🖨️ Generate CAM Memo</button>
+        <button class="btn-action" onclick="location.reload()">Reset</button>
+      </div>
+    </header>
+
+    <!-- Top KPI Cards -->
+    <section class="kpi-row">
+      <div class="card">
+        <div class="kpi-title">Verified Monthly Inflow</div>
+        <div class="kpi-val text-green" id="kpi-inflow">₹1,48,400</div>
+        <div class="kpi-sub text-green" id="kpi-inflow-sub">● Salary + Secondary Inflow</div>
+      </div>
+      <div class="card">
+        <div class="kpi-title">Total Outflow (Debits)</div>
+        <div class="kpi-val text-red" id="kpi-outflow">₹94,470</div>
+        <div class="kpi-sub text-muted" id="kpi-entries-sub">11 Transactions Audited</div>
+      </div>
+      <div class="card">
+        <div class="kpi-title">Savings Retention Ratio</div>
+        <div class="kpi-val text-blue" id="kpi-savings">36.3%</div>
+        <div class="kpi-sub text-green" id="kpi-net">+₹53,930 Net Retained</div>
+      </div>
+      <div class="card">
+        <div class="kpi-title">Autonomous Credit Score</div>
+        <div class="kpi-val text-purple" id="kpi-score">82 / 100</div>
+        <div class="kpi-sub text-green" id="kpi-score-sub">✓ Prime Grade A Eligible</div>
+      </div>
+    </section>
+
+    <!-- Real-Time Loan Sanction & Stress Testing Engine -->
+    <section class="sim-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h3 style="font-size: 16px; color: var(--primary);">⚡ Real-Time Loan Sanction Engine with Macro Stress Simulator</h3>
+          <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+            Simulate income shocks to test whether borrower can service EMIs without defaulting.
+          </p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 11px; color: var(--text-muted); font-weight: 700;">INCOME STRESS:</span>
+          <div class="stress-toggle">
+            <button class="stress-btn active" id="btn-stress-base" onclick="setStress('BASELINE')">Baseline (0%)</button>
+            <button class="stress-btn" id="btn-stress-20" onclick="setStress('SHOCK_20')">-20% Cut</button>
+            <button class="stress-btn" id="btn-stress-40" onclick="setStress('SHOCK_40')">-40% Shock</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="engine-grid">
+        <div>
+          <div class="slider-box">
+            <div class="slider-header">
+              <span>Requested Loan Amount</span>
+              <strong style="color: #fff;" id="label-loan-amt">₹18,00,000</strong>
+            </div>
+            <input type="range" min="200000" max="3500000" step="50000" value="1800000" id="slider-loan" class="slider-input" oninput="updateUnderwriting()">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="slider-box">
+              <div class="slider-header">
+                <span>Tenure</span>
+                <strong style="color: #fff;" id="label-tenure">3 Years (36 Mos)</strong>
+              </div>
+              <input type="range" min="1" max="5" step="1" value="3" id="slider-tenure" class="slider-input" oninput="updateUnderwriting()">
+            </div>
+            <div class="slider-box">
+              <div class="slider-header">
+                <span>Interest Rate (ROI)</span>
+                <strong style="color: #fff;" id="label-roi">10.5% p.a.</strong>
+              </div>
+              <input type="range" min="8.5" max="18" step="0.5" value="10.5" id="slider-roi" class="slider-input" oninput="updateUnderwriting()">
+            </div>
+          </div>
+        </div>
+
+        <div class="verdict-badge approved" id="verdict-card">
+          <span style="font-size: 11px; font-weight: 700; text-transform: uppercase;">Autonomous Decision</span>
+          <div style="font-size: 24px; font-weight: 800; margin: 6px 0;" id="verdict-title">✓ SANCTION APPROVED</div>
+          <div style="font-size: 13px;" id="verdict-emi-text">
+            Projected EMI: <strong>₹58,495 / mo</strong> | FOIR Burden: <strong>49.5%</strong>
+          </div>
+          <span style="font-size: 11px; margin-top: 6px;" id="verdict-note">
+            Passed RBI 50% FOIR ceiling with positive cash flow cushion.
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Forensic Radar Alerts -->
+    <section class="radar-banner">
+      <div class="radar-alert radar-red">
+        <h4 style="color: var(--danger); display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+          <span>🚨</span> Circular Shell Transfers & Failed Mandates
+        </h4>
+        • <strong>₹590 NACH Bounce:</strong> Mandate return penalty on 05 Nov (Short liquidity dip).<br />
+        • <strong>Circular Flow:</strong> ₹50,000 cash transfer on 14 Nov flags potential round-trip inflation.
+      </div>
+      <div class="radar-alert radar-blue">
+        <h4 style="color: var(--primary); display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+          <span>🛡️</span> Institutional Portfolio Integrity Scan
+        </h4>
+        • <strong>High-Risk Platforms:</strong> 0 records (No offshore betting, crypto, or payday loans).<br />
+        • <strong>Salary Continuity:</strong> 100% on-time credit across verified 90-day cycle.
+      </div>
+    </section>
+
+    <!-- Visual Charts -->
+    <section class="charts-grid">
+      <div class="card">
+        <h4 style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px;">
+          Outflow Split by Category
+        </h4>
+        <div class="chart-container"><canvas id="catChart"></canvas></div>
+      </div>
+      <div class="card">
+        <h4 style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px;">
+          Cash Flow Velocity (Inflow vs Outflow)
+        </h4>
+        <div class="chart-container"><canvas id="flowChart"></canvas></div>
+      </div>
+    </section>
+
+    <!-- Transaction Ledger Table -->
+    <section class="card">
+      <div class="table-toolbar">
+        <div>
+          <h3 style="font-size: 15px;">Multi-Account Statement Audit Trail</h3>
+          <p style="font-size: 12px; color: var(--text-muted);" id="table-subtitle">Normalized records with OCR forensic tags</p>
+        </div>
+
+        <div class="chips-group">
+          <button class="chip active" id="chip-all" onclick="setFilter('ALL')">All Records</button>
+          <button class="chip" id="chip-risk" onclick="setFilter('RISK')">⚠️ Flagged Outliers</button>
+          <button class="chip" id="chip-high" onclick="setFilter('HIGH')">Spends &gt; ₹10k</button>
+          <button class="chip" id="chip-credit" onclick="setFilter('CREDIT')">Credits Only</button>
+        </div>
+
+        <input type="text" id="search-box" placeholder="Search merchant or narration..." class="search-input" onkeyup="renderTable()">
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Narration / Merchant Description</th>
+              <th>Category</th>
+              <th>Type</th>
+              <th>Amount (₹)</th>
+              <th>Forensic Audit Tag</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // Multi-Account Datasets
+    const datasets = {
+      HDFC: [
+        { id: 1, date: "01 Nov 2026", desc: "SALARY CREDIT - TECH CORP PVT LTD", cat: "Salary", type: "Credit", amt: 125000, risk: "Verified Primary" },
+        { id: 2, date: "03 Nov 2026", desc: "UPI / SWIGGY FOOD ORDER / BLR", cat: "Dining", type: "Debit", amt: 640, risk: "Normal" },
+        { id: 3, date: "05 Nov 2026", desc: "ECS NACH BOUNCE PENALTY CHARGE", cat: "Penalty", type: "Debit", amt: 590, risk: "CRITICAL: Mandate Bounce" },
+        { id: 4, date: "07 Nov 2026", desc: "ZERODHA BROKING MUTUAL FUND SIP", cat: "Investment", type: "Debit", amt: 20000, risk: "Wealth Creation" },
+        { id: 5, date: "08 Nov 2026", desc: "UPWORK CLIENT MILESTONE INVOICE", cat: "Freelance", type: "Credit", amt: 15000, risk: "Secondary Verified" },
+        { id: 6, date: "10 Nov 2026", desc: "BESCOM BANGALORE ELECTRICITY BILL", cat: "Utilities", type: "Debit", amt: 2150, risk: "Fixed Utility" },
+        { id: 7, date: "12 Nov 2026", desc: "AMAZON RETAIL INDIA PURCHASE", cat: "Shopping", type: "Debit", amt: 4890, risk: "Discretionary" },
+        { id: 8, date: "14 Nov 2026", desc: "CIRCULAR CASH P2P IN-OUT TRANSFER", cat: "Transfer", type: "Debit", amt: 50000, risk: "FORENSIC: Circular Turnover" }
+      ],
+      ICICI: [
+        { id: 101, date: "02 Nov 2026", desc: "FD QUARTERLY INTEREST CREDIT", cat: "Interest", type: "Credit", amt: 8400, risk: "Passive Inflow" },
+        { id: 102, date: "06 Nov 2026", desc: "APOLLO PHARMACY HEALTH BILL", cat: "Medical", type: "Debit", amt: 1200, risk: "Essential" },
+        { id: 103, date: "09 Nov 2026", desc: "HOME LOAN PRE-PAYMENT PRINCIPAL", cat: "Debt Servicing", type: "Debit", amt: 15000, risk: "Fixed Obligation" }
+      ]
+    };
+
+    let currentAccount = 'ALL';
+    let currentStress = 'BASELINE';
+    let currentFilter = 'ALL';
+    let catChartInstance = null;
+    let flowChartInstance = null;
+
+    // Switch Account Function
+    function handleAccountSwitch(acc) {
+      currentAccount = acc;
+
+      // Class toggle
+      document.getElementById('btn-all').classList.remove('active');
+      document.getElementById('btn-hdfc').classList.remove('active');
+      document.getElementById('btn-icici').classList.remove('active');
+
+      if (acc === 'ALL') document.getElementById('btn-all').classList.add('active');
+      if (acc === 'HDFC') document.getElementById('btn-hdfc').classList.add('active');
+      if (acc === 'ICICI') document.getElementById('btn-icici').classList.add('active');
+
+      document.getElementById('table-subtitle').innerText = `Showing records for ${acc === 'ALL' ? 'Consolidated Accounts' : acc + ' Account'}`;
+      refreshAll();
+    }
+
+    function getActiveRecords() {
+      if (currentAccount === 'ALL') {
+        return [...datasets.HDFC, ...datasets.ICICI];
+      }
+      return datasets[currentAccount];
+    }
+
+    function setStress(stress) {
+      currentStress = stress;
+      document.querySelectorAll('.stress-btn').forEach(b => b.classList.remove('active'));
+      if (stress === 'BASELINE') document.getElementById('btn-stress-base').classList.add('active');
+      if (stress === 'SHOCK_20') document.getElementById('btn-stress-20').classList.add('active');
+      if (stress === 'SHOCK_40') document.getElementById('btn-stress-40').classList.add('active');
+      refreshAll();
+    }
+
+    function setFilter(f) {
+      currentFilter = f;
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      if (f === 'ALL') document.getElementById('chip-all').classList.add('active');
+      if (f === 'RISK') document.getElementById('chip-risk').classList.add('active');
+      if (f === 'HIGH') document.getElementById('chip-high').classList.add('active');
+      if (f === 'CREDIT') document.getElementById('chip-credit').classList.add('active');
+      renderTable();
+    }
+
+    function refreshAll() {
+      const records = getActiveRecords();
+      let baseInflow = records.filter(t => t.type === 'Credit').reduce((sum, t) => sum + t.amt, 0);
+      
+      let effectiveInflow = baseInflow;
+      if (currentStress === 'SHOCK_20') effectiveInflow = Math.round(baseInflow * 0.8);
+      if (currentStress === 'SHOCK_40') effectiveInflow = Math.round(baseInflow * 0.6);
+
+      const outflow = records.filter(t => t.type === 'Debit').reduce((sum, t) => sum + t.amt, 0);
+      const net = effectiveInflow - outflow;
+      const savingsPct = effectiveInflow > 0 ? ((net / effectiveInflow) * 100).toFixed(1) : 0;
+
+      // DOM Update
+      document.getElementById('kpi-inflow').innerText = '₹' + effectiveInflow.toLocaleString('en-IN');
+      document.getElementById('kpi-inflow-sub').innerText = currentStress !== 'BASELINE' ? `⚠️ Inflow Shock: ${currentStress}` : '● Regular Salary + Invoices';
+      document.getElementById('kpi-outflow').innerText = '₹' + outflow.toLocaleString('en-IN');
+      document.getElementById('kpi-entries-sub').innerText = `${records.length} Transactions Audited`;
+      document.getElementById('kpi-savings').innerText = `${savingsPct}%`;
+      document.getElementById('kpi-net').innerText = `${net >= 0 ? '+' : '-'}₹${Math.abs(net).toLocaleString('en-IN')} Net Retained`;
+
+      updateUnderwriting(effectiveInflow);
+      renderTable();
+      updateCharts(records, effectiveInflow, outflow);
+    }
+
+    function updateUnderwriting(inflowParam) {
+      const records = getActiveRecords();
+      let baseInflow = records.filter(t => t.type === 'Credit').reduce((sum, t) => sum + t.amt, 0);
+      let inflow = inflowParam !== undefined ? inflowParam : baseInflow;
+      if (currentStress === 'SHOCK_20') inflow = Math.round(baseInflow * 0.8);
+      if (currentStress === 'SHOCK_40') inflow = Math.round(baseInflow * 0.6);
+
+      const loanAmt = Number(document.getElementById('slider-loan').value);
+      const tenure = Number(document.getElementById('slider-tenure').value);
+      const roi = Number(document.getElementById('slider-roi').value);
+
+      document.getElementById('label-loan-amt').innerText = '₹' + loanAmt.toLocaleString('en-IN');
+      document.getElementById('label-tenure').innerText = `${tenure} Years (${tenure * 12} Mos)`;
+      document.getElementById('label-roi').innerText = `${roi}% p.a.`;
+
+      const r = (roi / 12) / 100;
+      const n = tenure * 12;
+      const emi = Math.round((loanAmt * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1));
+      
+      const existingDebt = 15000;
+      const foir = inflow > 0 ? (((emi + existingDebt) / inflow) * 100).toFixed(1) : 0;
+      const approved = foir <= 50;
+
+      const card = document.getElementById('verdict-card');
+      const title = document.getElementById('verdict-title');
+      const emiText = document.getElementById('verdict-emi-text');
+      const note = document.getElementById('verdict-note');
+      const score = document.getElementById('kpi-score');
+      const scoreSub = document.getElementById('kpi-score-sub');
+
+      if (approved) {
+        card.className = 'verdict-badge approved';
+        title.innerText = '✓ SANCTION APPROVED';
+        note.innerText = 'Passed RBI 50% FOIR ceiling with positive cash flow cushion.';
+        score.innerText = '82 / 100';
+        score.className = 'kpi-val text-purple';
+        scoreSub.innerText = '✓ Prime Grade A Eligible';
+        scoreSub.className = 'kpi-sub text-green';
+      } else {
+        card.className = 'verdict-badge rejected';
+        title.innerText = '⚠️ HIGH RISK - DECLINED';
+        note.innerText = 'Failed: Debt obligation breaches 50% threshold under current stress.';
+        score.innerText = '54 / 100';
+        score.className = 'kpi-val text-red';
+        scoreSub.innerText = '⚠️ Debt Burden Breach';
+        scoreSub.className = 'kpi-sub text-red';
+      }
+
+      emiText.innerHTML = `Projected EMI: <strong>₹${emi.toLocaleString('en-IN')} / mo</strong> | FOIR Burden: <strong>${foir}%</strong>`;
+    }
+
+    function renderTable() {
+      const records = getActiveRecords();
+      const search = document.getElementById('search-box').value.toLowerCase();
+      const tbody = document.getElementById('table-body');
+      tbody.innerHTML = '';
+
+      const filtered = records.filter(t => {
+        const matchesSearch = t.desc.toLowerCase().includes(search) || t.cat.toLowerCase().includes(search);
+        if (!matchesSearch) return false;
+        if (currentFilter === 'RISK') return t.risk.includes('CRITICAL') || t.risk.includes('FORENSIC');
+        if (currentFilter === 'HIGH') return t.amt >= 10000;
+        if (currentFilter === 'CREDIT') return t.type === 'Credit';
+        return true;
+      });
+
+      filtered.forEach(t => {
+        const tr = document.createElement('tr');
+        const isCritical = t.risk.includes('CRITICAL');
+        const isForensic = t.risk.includes('FORENSIC');
+        
+        let riskHtml = `<span style="color: var(--text-muted);">${t.risk}</span>`;
+        if (isCritical) riskHtml = `<span class="badge badge-flag">${t.risk}</span>`;
+        else if (isForensic) riskHtml = `<span style="color: var(--danger); font-weight: 700;">${t.risk}</span>`;
+
+        tr.innerHTML = `
+          <td>${t.date}</td>
+          <td><strong>${t.desc}</strong></td>
+          <td>${t.cat}</td>
+          <td><span class="badge ${t.type === 'Credit' ? 'badge-cr' : 'badge-db'}">${t.type}</span></td>
+          <td style="font-weight: 800; color: ${t.type === 'Credit' ? 'var(--success)' : 'var(--danger)'}">
+            ${t.type === 'Credit' ? '+' : '-'}₹${t.amt.toLocaleString('en-IN')}
+          </td>
+          <td>${riskHtml}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateCharts(records, inflow, outflow) {
+      if (typeof Chart === 'undefined') return;
+
+      const cats = {};
+      records.forEach(t => {
+        if (t.type === 'Debit') cats[t.cat] = (cats[t.cat] || 0) + t.amt;
+      });
+
+      const ctxCat = document.getElementById('catChart').getContext('2d');
+      if (catChartInstance) catChartInstance.destroy();
+      catChartInstance = new Chart(ctxCat, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(cats),
+          datasets: [{
+            data: Object.values(cats),
+            backgroundColor: ['#3b82f6', '#a855f7', '#f59e0b', '#ef4444', '#10b981', '#06b6d4', '#ec4899'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { color: '#7e91b0', boxWidth: 10 } } }
+        }
+      });
+
+      const ctxFlow = document.getElementById('flowChart').getContext('2d');
+      if (flowChartInstance) flowChartInstance.destroy();
+      flowChartInstance = new Chart(ctxFlow, {
+        type: 'bar',
+        data: {
+          labels: ['Simulated Inflow', 'Actual Outflow Debits'],
+          datasets: [{
+            data: [inflow, outflow],
+            backgroundColor: ['#10b981', '#ef4444'],
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#7e91b0' }, grid: { color: '#1a2744' } },
+            y: { ticks: { color: '#7e91b0' }, grid: { color: '#1a2744' } }
+          }
+        }
+      });
+    }
+
+    window.onload = refreshAll;
+  </script>
+</body>
+</html>
